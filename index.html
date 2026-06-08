@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ClimaGestor">
+    <title>ClimaGestor</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        html, body { height: 100%; overflow: hidden; background: #f0f4f8; }
+        .app { display: flex; height: 100vh; }
+        .sidebar { width: 260px; background: linear-gradient(180deg,#1e3a8a,#0c4a6e); color: white; padding: 20px; overflow-y: auto; }
+        .logo { font-size: 24px; font-weight: bold; margin-bottom: 30px; text-align: center; }
+        .logo span { color: #38bdf8; }
+        .menu-item { padding: 14px 16px; margin: 6px 0; border-radius: 8px; cursor: pointer; transition: 0.3s; }
+        .menu-item:hover, .menu-item.active { background: rgba(255,255,255,0.2); }
+        .main { flex: 1; padding: 20px; overflow-y: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        .header h1 { color: #0c4a6e; }
+        .btn { background: #0ea5e9; color: white; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .btn:hover { background: #0284c7; }
+        .btn-danger { background: #ef4444; }
+        .btn-success { background: #10b981; }
+        .btn-warning { background: #f59e0b; }
+        .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; margin-bottom: 25px; }
+        .card { background: white; padding: 18px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-left: 5px solid #0ea5e9; }
+        .card h3 { font-size: 13px; color: #64748b; text-transform: uppercase; }
+        .card .value { font-size: 26px; font-weight: bold; margin-top: 8px; color: #0c4a6e; }
+        .card.green { border-left-color: #10b981; }
+        .card.red { border-left-color: #ef4444; }
+        .card.orange { border-left-color: #f59e0b; }
+        table { width: 100%; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        th { background: #0c4a6e; color: white; font-size: 13px; text-transform: uppercase; }
+        tr:hover { background: #f1f5f9; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: #334155; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; }
+        .badge { padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .badge.pendiente { background: #fef3c7; color: #92400e; }
+        .badge.completado { background: #d1fae5; color: #065f46; }
+        .badge.proceso { background: #dbeafe; color: #1e40af; }
+        .section { display: none; }
+        .section.active { display: block; }
+        .ai-output { background: #f1f5f9; padding: 15px; border-radius: 8px; margin: 15px 0; white-space: pre-wrap; border-left: 4px solid #0ea5e9; }
+        .social-buttons { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+        .social-btn { padding: 10px 15px; border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer; }
+        .fb { background: #1877f2; }
+        .ig { background: #e1306c; }
+        .wa { background: #25d366; }
+        .tw { background: #1da1f2; }
+
+        @media (max-width: 768px) {
+            .app { flex-direction: column; }
+            .sidebar { width: 100%; flex-direction: row; padding: 10px; overflow-x: auto; gap: 8px; }
+            .menu-item { white-space: nowrap; font-size: 14px; padding: 10px 14px; }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <div class="sidebar">
+        <div class="logo">🌬️ Clima<span>Gestor</span></div>
+        <div class="menu-item active" onclick="showSection('dashboard', this)">📊 Dashboard</div>
+        <div class="menu-item" onclick="showSection('actividades', this)">📅 Actividades</div>
+        <div class="menu-item" onclick="showSection('personal', this)">👷 Personal</div>
+        <div class="menu-item" onclick="showSection('finanzas', this)">💰 Finanzas</div>
+        <div class="menu-item" onclick="showSection('inventario', this)">📦 Inventario</div>
+        <div class="menu-item" onclick="showSection('marketing', this)">📣 Marketing IA</div>
+    </div>
+
+    <div class="main">
+        <!-- Secciones (Dashboard, Actividades, etc.) -->
+        <div id="dashboard" class="section active">
+            <div class="header"><h1>📊 Dashboard General</h1></div>
+            <div class="cards">
+                <div class="card green"><h3>Ingresos del Mes</h3><div class="value" id="totalIngresos">$0</div></div>
+                <div class="card red"><h3>Gastos del Mes</h3><div class="value" id="totalGastos">$0</div></div>
+                <div class="card"><h3>Balance</h3><div class="value" id="balance">$0</div></div>
+                <div class="card orange"><h3>Actividades Pendientes</h3><div class="value" id="actPendientes">0</div></div>
+                <div class="card"><h3>Técnicos Activos</h3><div class="value" id="totalPersonal">0</div></div>
+                <div class="card"><h3>Productos en Stock</h3><div class="value" id="totalStock">0</div></div>
+            </div>
+            <h2 style="margin:20px 0 10px; color:#0c4a6e;">Próximas Actividades</h2>
+            <table><thead><tr><th>Fecha</th><th>Cliente</th><th>Tipo</th><th>Técnico</th><th>Estado</th></tr></thead>
+            <tbody id="proximasAct"></tbody></table>
+        </div>
+
+        <div id="actividades" class="section">
+            <div class="header"><h1>📅 Actividades Diarias</h1><button class="btn" onclick="openModal('modalAct')">+ Nueva Actividad</button></div>
+            <table><thead><tr><th>Fecha</th><th>Cliente</th><th>Dirección</th><th>Tipo</th><th>Técnico</th><th>Costo</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody id="tablaActividades"></tbody></table>
+        </div>
+
+        <div id="personal" class="section">
+            <div class="header"><h1>👷 Gestión de Personal</h1><button class="btn" onclick="openModal('modalPersonal')">+ Nuevo Empleado</button></div>
+            <table><thead><tr><th>Nombre</th><th>Cargo</th><th>Teléfono</th><th>Salario</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody id="tablaPersonal"></tbody></table>
+        </div>
+
+        <div id="finanzas" class="section">
+            <div class="header"><h1>💰 Ingresos y Gastos</h1>
+                <div>
+                    <button class="btn btn-success" onclick="openModal('modalIngreso')">+ Ingreso</button>
+                    <button class="btn btn-danger" onclick="openModal('modalGasto')">+ Gasto</button>
+                </div>
+            </div>
+            <table><thead><tr><th>Fecha</th><th>Tipo</th><th>Concepto</th><th>Categoría</th><th>Monto</th><th>Acciones</th></tr></thead>
+            <tbody id="tablaFinanzas"></tbody></table>
+        </div>
+
+        <div id="inventario" class="section">
+            <div class="header"><h1>📦 Inventario</h1><button class="btn" onclick="openModal('modalInv')">+ Producto</button></div>
+            <table><thead><tr><th>Producto</th><th>Categoría</th><th>Stock</th><th>Precio Venta</th><th>Proveedor</th><th>Acciones</th></tr></thead>
+            <tbody id="tablaInventario"></tbody></table>
+        </div>
+
+        <div id="marketing" class="section">
+            <div class="header"><h1>📣 Generador de Anuncios IA</h1></div>
+            <div class="card">
+                <h3>Crea anuncios automáticos para redes sociales</h3>
+                <div class="form-group"><label>Tipo de promoción</label>
+                    <select id="adType">
+                        <option value="instalacion">Servicio de Instalación</option>
+                        <option value="mantenimiento">Mantenimiento Preventivo</option>
+                        <option value="venta">Venta de Equipos</option>
+                        <option value="oferta">Oferta Especial</option>
+                        <option value="emergencia">Servicio de Emergencia 24/7</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Detalles adicionales (opcional)</label>
+                    <textarea id="adDetails" rows="3" placeholder="Ej: 20% de descuento..."></textarea>
+                </div>
+                <div class="form-group"><label>Red social objetivo</label>
+                    <select id="adNetwork">
+                        <option value="facebook">Facebook</option>
+                        <option value="instagram">Instagram</option>
+                        <option value="whatsapp">WhatsApp</option>
+                        <option value="twitter">Twitter</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="generateAd()">🤖 Generar Anuncio con IA</button>
+                <div id="adOutput" class="ai-output" style="display:none;"></div>
+                <div id="socialActions" style="display:none;">
+                    <h3 style="margin-top:15px;">Publicar en:</h3>
+                    <div class="social-buttons">
+                        <button class="social-btn fb" onclick="publishAd('Facebook')">Facebook</button>
+                        <button class="social-btn ig" onclick="publishAd('Instagram')">Instagram</button>
+                        <button class="social-btn wa" onclick="publishAd('WhatsApp')">WhatsApp</button>
+                        <button class="social-btn tw" onclick="publishAd('Twitter')">Twitter</button>
+                    </div>
+                </div>
+            </div>
+            <h2 style="margin:25px 0 10px; color:#0c4a6e;">Historial de Anuncios</h2>
+            <table><thead><tr><th>Fecha</th><th>Tipo</th><th>Red</th><th>Contenido</th></tr></thead>
+            <tbody id="tablaAnuncios"></tbody></table>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== MODALES ==================== -->
+<div id="modalAct" class="modal"><div class="modal-content">
+    <h2>Nueva Actividad</h2>
+    <div class="form-group"><label>Fecha</label><input type="date" id="actFecha"></div>
+    <div class="form-group"><label>Cliente</label><input type="text" id="actCliente"></div>
+    <div class="form-group"><label>Dirección</label><input type="text" id="actDir"></div>
+    <div class="form-group"><label>Tipo de servicio</label><select id="actTipo"><option>Instalación</option><option>Mantenimiento</option><option>Reparación</option><option>Venta</option></select></div>
+    <div class="form-group"><label>Técnico asignado</label><select id="actTecnico"></select></div>
+    <div class="form-group"><label>Costo</label><input type="number" id="actCosto"></div>
+    <div class="form-group"><label>Estado</label><select id="actEstado"><option>Pendiente</option><option>En Proceso</option><option>Completado</option></select></div>
+    <button class="btn btn-success" onclick="saveAct()">Guardar</button>
+    <button class="btn btn-danger" onclick="closeModal('modalAct')">Cancelar</button>
+</div></div>
+
+<div id="modalPersonal" class="modal"><div class="modal-content">
+    <h2>Nuevo Empleado</h2>
+    <div class="form-group"><label>Nombre</label><input type="text" id="pNombre"></div>
+    <div class="form-group"><label>Cargo</label><select id="pCargo"><option>Técnico Instalador</option><option>Técnico de Mantenimiento</option><option>Vendedor</option><option>Administrativo</option></select></div>
+    <div class="form-group"><label>Teléfono</label><input type="text" id="pTel"></div>
+    <div class="form-group"><label>Salario mensual</label><input type="number" id="pSalario"></div>
+    <button class="btn btn-success" onclick="savePersonal()">Guardar</button>
+    <button class="btn btn-danger" onclick="closeModal('modalPersonal')">Cancelar</button>
+</div></div>
+
+<div id="modalIngreso" class="modal"><div class="modal-content">
+    <h2>Registrar Ingreso</h2>
+    <div class="form-group"><label>Fecha</label><input type="date" id="iFecha"></div>
+    <div class="form-group"><label>Concepto</label><input type="text" id="iConcepto"></div>
+    <div class="form-group"><label>Categoría</label><select id="iCat"><option>Instalación</option><option>Mantenimiento</option><option>Venta de Equipo</option><option>Otro</option></select></div>
+    <div class="form-group"><label>Monto</label><input type="number" id="iMonto"></div>
+    <button class="btn btn-success" onclick="saveFinanza('ingreso')">Guardar</button>
+    <button class="btn btn-danger" onclick="closeModal('modalIngreso')">Cancelar</button>
+</div></div>
+
+<div id="modalGasto" class="modal"><div class="modal-content">
+    <h2>Registrar Gasto</h2>
+    <div class="form-group"><label>Fecha</label><input type="date" id="gFecha"></div>
+    <div class="form-group"><label>Concepto</label><input type="text" id="gConcepto"></div>
+    <div class="form-group"><label>Categoría</label><select id="gCat"><option>Compra de Suministros</option><option>Nómina</option><option>Transporte</option><option>Publicidad</option><option>Otro</option></select></div>
+    <div class="form-group"><label>Monto</label><input type="number" id="gMonto"></div>
+    <button class="btn btn-success" onclick="saveFinanza('gasto')">Guardar</button>
+    <button class="btn btn-danger" onclick="closeModal('modalGasto')">Cancelar</button>
+</div></div>
+
+<div id="modalInv" class="modal"><div class="modal-content">
+    <h2>Nuevo Producto</h2>
+    <div class="form-group"><label>Nombre del producto</label><input type="text" id="invNombre"></div>
+    <div class="form-group"><label>Categoría</label><select id="invCat"><option>Equipo Split</option><option>Filtros</option><option>Refrigerante</option><option>Repuestos</option><option>Herramientas</option></select></div>
+    <div class="form-group"><label>Stock</label><input type="number" id="invStock"></div>
+    <div class="form-group"><label>Precio de venta</label><input type="number" id="invPrecio"></div>
+    <div class="form-group"><label>Proveedor</label><input type="text" id="invProv"></div>
+    <button class="btn btn-success" onclick="saveInv()">Guardar</button>
+    <button class="btn btn-danger" onclick="closeModal('modalInv')">Cancelar</button>
+</div></div>
+
+<script>
+// === BASE DE DATOS LOCAL ===
+let db = JSON.parse(localStorage.getItem('climaDB')) || {
+    actividades: [], personal: [], finanzas: [], inventario: [], anuncios: []
+};
+const save = () => localStorage.setItem('climaDB', JSON.stringify(db));
+
+// === NAVEGACIÓN ===
+function showSection(id, el) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    el.classList.add('active');
+    render();
+}
+const openModal = id => { document.getElementById(id).style.display = 'flex'; loadTecnicos(); };
+const closeModal = id => document.getElementById(id).style.display = 'none';
+
+// === FUNCIONES PRINCIPALES (Actividades, Personal, Finanzas, Inventario, Marketing IA) ===
+function saveAct() {
+    db.actividades.push({ id: Date.now(), fecha: actFecha.value, cliente: actCliente.value, dir: actDir.value, tipo: actTipo.value, tecnico: actTecnico.value, costo: +actCosto.value, estado: actEstado.value });
+    save(); closeModal('modalAct'); render();
+}
+function delAct(id) { if(confirm('¿Eliminar actividad?')){ db.actividades = db.actividades.filter(a=>a.id!=id); save(); render(); }}
+function changeStatus(id) {
+    const a = db.actividades.find(x=>x.id==id);
+    const estados = ['Pendiente','En Proceso','Completado'];
+    a.estado = estados[(estados.indexOf(a.estado)+1)%3];
+    if(a.estado==='Completado' && a.costo>0) {
+        db.finanzas.push({id:Date.now(),fecha:a.fecha,tipo:'ingreso',concepto:`${a.tipo} - ${a.cliente}`,cat:a.tipo,monto:a.costo});
+    }
+    save(); render();
+}
+
+function savePersonal() {
+    db.personal.push({id:Date.now(),nombre:pNombre.value,cargo:pCargo.value,tel:pTel.value,salario:+pSalario.value});
+    save(); closeModal('modalPersonal'); render();
+}
+function delPersonal(id){ if(confirm('¿Eliminar empleado?')){ db.personal=db.personal.filter(p=>p.id!=id); save(); render(); }}
+function pagarSalario(id){
+    const p = db.personal.find(x=>x.id==id);
+    db.finanzas.push({id:Date.now(),fecha:new Date().toISOString().split('T')[0],tipo:'gasto',concepto:`Salario ${p.nombre}`,cat:'Nómina',monto:p.salario});
+    save(); render(); alert('Salario registrado como gasto');
+}
+
+function saveFinanza(tipo) {
+    const p = tipo==='ingreso' ? 'i' : 'g';
+    db.finanzas.push({id:Date.now(),fecha:window[p+'Fecha'].value,tipo,concepto:window[p+'Concepto'].value,cat:window[p+'Cat'].value,monto:+window[p+'Monto'].value});
+    save(); closeModal('modal'+tipo[0].toUpperCase()+tipo.slice(1)); render();
+}
+function delFinanza(id){ if(confirm('¿Eliminar?')){ db.finanzas=db.finanzas.filter(f=>f.id!=id); save(); render(); }}
+
+function saveInv() {
+    db.inventario.push({id:Date.now(),nombre:invNombre.value,cat:invCat.value,stock:+invStock.value,precio:+invPrecio.value,prov:invProv.value});
+    save(); closeModal('modalInv'); render();
+}
+function delInv(id){ if(confirm('¿Eliminar?')){ db.inventario=db.inventario.filter(i=>i.id!=id); save(); render(); }}
+
+// === GENERADOR DE ANUNCIOS IA ===
+function generateAd() {
+    const tipo = adType.value, det = adDetails.value || "", red = adNetwork.value;
+    const templates = {
+        instalacion: ["❄️ ¡INSTALACIÓN PROFESIONAL DE AIRE ACONDICIONADO! ❄️\n\n¿Sufres con el calor? Instalamos el mismo día. Garantía total.\n\n📞 Llámanos ahora! " + det],
+        mantenimiento: ["🔧 MANTENIMIENTO PREVENTIVO 🔧\n\nAhorra hasta 30% en tu factura. Limpieza profunda incluida.\n\n" + det],
+        venta: ["🛒 EQUIPOS DE AIRE ACONDICIONADO AL MEJOR PRECIO 🛒\n\nSplit, Inverter y más. Asesoría gratis.\n\n" + det],
+        oferta: ["🔥 OFERTA ESPECIAL POR TIEMPO LIMITADO 🔥\n\n" + (det || "¡Grandes descuentos este mes!") + "\n\nStock limitado. Escríbenos ya!"],
+        emergencia: ["🚨 SERVICIO DE EMERGENCIA 24/7 🚨\n\nFallas, fugas o sin frío. Llegamos rápido.\n\n" + det]
+    };
+    const text = templates[tipo][0];
+    document.getElementById('adOutput').style.display = 'block';
+    document.getElementById('adOutput').textContent = text;
+    document.getElementById('socialActions').style.display = 'block';
+    window.currentAd = { text, tipo, red };
+}
+
+function publishAd(red) {
+    const ad = window.currentAd;
+    if(!ad) return alert('Primero genera un anuncio');
+    db.anuncios.push({id:Date.now(),fecha:new Date().toLocaleString(),tipo:ad.tipo,red:red,texto:ad.text});
+    save();
+    const enc = encodeURIComponent(ad.text);
+    const urls = {
+        Facebook: `https://www.facebook.com/sharer/sharer.php?quote=${enc}`,
+        Twitter: `https://twitter.com/intent/tweet?text=${enc}`,
+        WhatsApp: `https://wa.me/?text=${enc}`,
+        Instagram: null
+    };
+    if(urls[red]) window.open(urls[red], '_blank');
+    else alert('Texto copiado al historial.');
+    render();
+    alert(`✅ Publicado en ${red}`);
+}
+
+function loadTecnicos() {
+    const sel = document.getElementById('actTecnico');
+    sel.innerHTML = db.personal.length ? 
+        db.personal.map(p => `<option>${p.nombre}</option>`).join('') : 
+        '<option>Sin técnicos registrados</option>';
+}
+
+// === RENDER ===
+function render() {
+    const mes = new Date().getMonth();
+    const ingresos = db.finanzas.filter(f=>f.tipo==='ingreso' && new Date(f.fecha).getMonth()===mes).reduce((s,f)=>s+f.monto,0);
+    const gastos = db.finanzas.filter(f=>f.tipo==='gasto' && new Date(f.fecha).getMonth()===mes).reduce((s,f)=>s+f.monto,0);
+    
+    totalIngresos.textContent = '$' + ingresos.toLocaleString();
+    totalGastos.textContent = '$' + gastos.toLocaleString();
+    balance.textContent = '$' + (ingresos - gastos).toLocaleString();
+    balance.style.color = (ingresos - gastos) >= 0 ? '#10b981' : '#ef4444';
+    actPendientes.textContent = db.actividades.filter(a=>a.estado !== 'Completado').length;
+    totalPersonal.textContent = db.personal.length;
+    totalStock.textContent = db.inventario.reduce((s,i)=>s+i.stock,0);
+
+    // Renderizado de tablas (resumido por brevedad)
+    proximasAct.innerHTML = db.actividades.filter(a=>a.estado!=='Completado').slice(0,5).map(a => 
+        `<tr><td>${a.fecha}</td><td>${a.cliente}</td><td>${a.tipo}</td><td>${a.tecnico}</td><td><span class="badge ${a.estado.toLowerCase()}">${a.estado}</span></td></tr>`
+    ).join('') || '<tr><td colspan="5" style="text-align:center;color:#94a3b8;">Sin actividades pendientes</td></tr>';
+
+    tablaActividades.innerHTML = db.actividades.map(a => 
+        `<tr><td>${a.fecha}</td><td>${a.cliente}</td><td>${a.dir||''}</td><td>${a.tipo}</td><td>${a.tecnico}</td><td>$${a.costo}</td>
+        <td><span class="badge ${a.estado.toLowerCase()}">${a.estado}</span></td>
+        <td><button class="btn btn-warning" onclick="changeStatus(${a.id})">↻</button>
+        <button class="btn btn-danger" onclick="delAct(${a.id})">🗑</button></td></tr>`
+    ).join('') || '<tr><td colspan="8" style="text-align:center;color:#94a3b8;">Sin registros</td></tr>';
+
+    tablaAnuncios.innerHTML = db.anuncios.slice().reverse().map(a =>
+        `<tr><td>${a.fecha}</td><td>${a.tipo}</td><td>${a.red}</td><td style="max-width:300px;">${a.texto.substring(0,80)}...</td></tr>`
+    ).join('') || '<tr><td colspan="4" style="text-align:center;color:#94a3b8;">Sin anuncios</td></tr>';
+}
+
+render();
+</script>
+</body>
+</html>
